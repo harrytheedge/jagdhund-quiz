@@ -1,0 +1,22 @@
+{
+  "name": "Jagdhunderassen Quiz",
+  "short_name": "Jagdhund Quiz",
+  "description": "Lernspiel für die Jägerprüfung - 32 Jagdhunderassen",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#2c5282",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
