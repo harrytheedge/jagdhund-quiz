@@ -369,23 +369,86 @@
         function normalizeString(str) {
             return str.toLowerCase()
                 .replace(/ä/g, 'a').replace(/ö/g, 'o').replace(/ü/g, 'u')
-                .replace(/ß/g, 'ss').replace(/é/g, 'e')
-                .replace(/[^a-z0-9]/g, '');
+                .replace(/ß/g, 'ss').replace(/é/g, 'e').replace(/á/g, 'a')
+                .replace(/[^a-z0-9]/g, ' ').replace(/\s+/g, ' ').trim();
         }
+        
+        // Alternative accepted names for each breed
+        const acceptedNames = {
+            'magyar vizsla': ['vizsla', 'magyar', 'ungarischer vorstehhund', 'ungarischer', 'magyar vizsla'],
+            'labrador retriever': ['labrador', 'labbi', 'lab'],
+            'golden retriever': ['golden', 'goldie'],
+            'deutsch drahthaar': ['drahthaar', 'deutscher drahthaar'],
+            'deutsch kurzhaar': ['kurzhaar', 'deutscher kurzhaar'],
+            'deutsch langhaar': ['langhaar', 'deutscher langhaar'],
+            'deutsch stichelhaar': ['stichelhaar', 'deutscher stichelhaar'],
+            'grosser munsterlander': ['grosser munsterlander', 'grosser', 'gr munsterlander'],
+            'kleiner munsterlander': ['kleiner munsterlander', 'kleiner', 'kl munsterlander'],
+            'hannoverscher schweisshund': ['hannoveraner', 'hannoverscher', 'hannover schweisshund'],
+            'bayerischer gebirgsschweisshund': ['bayerischer', 'gebirgsschweisshund', 'bgs'],
+            'deutscher jagdterrier': ['jagdterrier', 'deutscher terrier'],
+            'deutscher wachtelhund': ['wachtelhund', 'wachtel'],
+            'cocker spaniel': ['cocker', 'spaniel'],
+            'english setter': ['englischer setter', 'setter'],
+            'irish setter': ['irischer setter', 'irish'],
+            'gordon setter': ['gordon'],
+            'epagneul breton bretone': ['breton', 'bretone', 'epagneul', 'epagneul breton'],
+            'griffon korthals': ['griffon', 'korthals'],
+            'weimaraner kurzhaar': ['weimaraner'],
+            'weimaraner langhaar': ['weimaraner langhaar'],
+            'foxterrier glatthaar': ['foxterrier glatthaar', 'foxterrier glatt', 'glatthaar foxterrier'],
+            'foxterrier rauhhaar': ['foxterrier', 'foxterrier rauh', 'rauhhaar foxterrier'],
+            'kurzhaarteckel': ['kurzhaar teckel', 'teckel', 'dackel'],
+            'langhaarteckel': ['langhaar teckel'],
+            'rauhaarteckel': ['rauhaar teckel'],
+            'alpenlandische dachsbracke': ['dachsbracke', 'alpenlandische'],
+            'brandlbracke': ['brandl'],
+            'deutsche bracke': ['bracke'],
+            'pudelpointer': ['pudel pointer'],
+            'pointer': ['englischer pointer'],
+            'beagle': []
+        };
         
         function checkAnswer(input, breed) {
             const normalizedInput = normalizeString(input);
             const normalizedName = normalizeString(breed.name);
-            const normalizedAbbrev = normalizeString(breed.abbrev);
+            const normalizedAbbrev = normalizeString(breed.abbrev).replace(/ /g, '');
             
+            // Exact match
             if (normalizedInput === normalizedName) return true;
-            if (normalizedInput === normalizedAbbrev) return true;
+            if (normalizedInput.replace(/ /g, '') === normalizedAbbrev) return true;
             
-            const similarity = calculateSimilarity(normalizedInput, normalizedName);
-            if (similarity > 0.8) return true;
+            // Check accepted alternative names
+            for (const [key, alternatives] of Object.entries(acceptedNames)) {
+                if (normalizedName.includes(key) || key.includes(normalizedName.split(' ')[0])) {
+                    // Check if input matches any alternative
+                    for (const alt of alternatives) {
+                        const normAlt = normalizeString(alt);
+                        if (normalizedInput === normAlt) return true;
+                        if (normalizedInput.includes(normAlt) && normAlt.length > 4) return true;
+                        if (normAlt.includes(normalizedInput) && normalizedInput.length > 4) return true;
+                    }
+                }
+            }
             
-            const mainName = normalizedName.split(/\s+/)[0];
-            if (normalizedInput === mainName && mainName.length > 3) return true;
+            // Check if any significant word from the name is in the input
+            const nameWords = normalizedName.split(' ').filter(w => w.length > 4);
+            const inputWords = normalizedInput.split(' ').filter(w => w.length > 3);
+            
+            for (const nw of nameWords) {
+                for (const iw of inputWords) {
+                    if (nw === iw) return true;
+                    if (calculateSimilarity(nw, iw) > 0.85) return true;
+                }
+            }
+            
+            // Fuzzy match on full name
+            const similarity = calculateSimilarity(normalizedInput.replace(/ /g, ''), normalizedName.replace(/ /g, ''));
+            if (similarity > 0.75) return true;
+            
+            // Check if input is contained in name or vice versa (for partial matches)
+            if (normalizedInput.length > 5 && normalizedName.includes(normalizedInput)) return true;
+            if (normalizedInput.length > 5 && normalizedInput.includes(normalizedName)) return true;
             
             return false;
         }
